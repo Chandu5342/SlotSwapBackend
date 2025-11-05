@@ -66,10 +66,17 @@ export const getOutgoingSwaps = async (req, res) => {
 
 export const acceptSwap = async (req, res) => {
   try {
-    const swap = await SwapRequest.findById(req.params.id);
+    console.log("✅ Accept swap called for:", req.params.id, "by user:", req.user.id);
+
+    const swap = await SwapRequest.findById(req.params.id)
+      .populate("mySlot")
+      .populate("theirSlot")
+      .populate("requester")
+      .populate("receiver");
+
     if (!swap) return res.status(404).json({ message: "Swap not found" });
 
-    if (swap.receiver.toString() !== req.user.id)
+    if (swap.receiver._id.toString() !== req.user.id)
       return res.status(401).json({ message: "Not authorized" });
 
     swap.status = "ACCEPTED";
@@ -89,12 +96,13 @@ export const acceptSwap = async (req, res) => {
     await mySlot.save();
     await theirSlot.save();
 
+    console.log("✅ Swap accepted successfully!");
     res.json({ message: "Swap accepted", swap });
   } catch (error) {
+    console.error("❌ Error in acceptSwap:", error);
     res.status(500).json({ message: error.message });
   }
 };
-
 
 export const rejectSwap = async (req, res) => {
   try {
@@ -113,5 +121,22 @@ export const rejectSwap = async (req, res) => {
     res.json({ message: "Swap rejected", swap });
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+export const getSwappableSlots = async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    const swappableSlots = await Event.find({
+      status: "SWAPPABLE",
+      user: { $ne: userId }, // exclude the current user's own events
+    })
+      .populate("user", "name email")
+      .sort({ startTime: 1 });
+
+    res.json(swappableSlots);
+  } catch (error) {
+    res.status(500).json({ message: "Server error while fetching swappable slots" });
   }
 };
