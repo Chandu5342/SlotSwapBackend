@@ -6,7 +6,7 @@ import { connectDB } from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";    
 import eventRoutes from "./routes/eventRoutes.js";
 import swapRoutes from "./routes/swapRoutes.js";
-import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
+
 dotenv.config();
 
 const app = express();
@@ -17,8 +17,7 @@ app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/swaps", swapRoutes);
-app.use(notFound);
-app.use(errorHandler);
+
 app.get("/", (req, res) => {
   res.send("backend is running")
 });
